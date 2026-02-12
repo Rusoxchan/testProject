@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1e1e2e">
+    <title>Downloader</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .chip-radio:checked+label {
+            background-color: #89b4fa;
+            color: #1e1e2e;
+            border-color: #89b4fa;
+        }
+
+        /* Progress bar animation */
+        .progress-fill {
+            transition: width 0.3s ease-out;
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        bg: '#1e1e2e',
+                        surface: '#282840',
+                        text: '#cdd6f4',
+                        subtext: '#a6adc8',
+                        accent: '#89b4fa',
+                        accentHover: '#74c7ec',
+                        success: '#a6e3a1',
+                        error: '#f38ba8',
+                        border: '#45475a'
+                    },
+                    boxShadow: { 'glow': '0 0 20px rgba(137, 180, 250, 0.15)' }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body class="bg-bg text-text min-h-screen flex flex-col selection:bg-accent selection:text-bg">
+
+    <!-- Sticky Header -->
+    <header class="sticky top-0 z-50 bg-bg/80 backdrop-blur-md border-b border-border/50">
+        <div class="max-w-md mx-auto px-6 py-4 flex items-center justify-between">
+            <div>
+                <h1 class="text-xl font-bold tracking-tight text-white">Downloader</h1>
+                <p class="text-xs text-accent font-medium">Pro Queue</p>
+            </div>
+            <div id="connectionStatus" class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 w-full max-w-md mx-auto p-6 pb-32 space-y-8">
+
+        <!-- URL Input Section -->
+        <div class="space-y-3">
+            <label class="text-xs font-bold text-subtext tracking-wider uppercase ml-1">Media Link</label>
+            <div class="relative group">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <svg class="w-5 h-5 text-subtext group-focus-within:text-accent transition-colors" fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1">
+                        </path>
+                    </svg>
+                </div>
+                <input type="url" id="urlInput" placeholder="Paste YouTube link..."
+                    class="w-full bg-surface border border-border rounded-2xl py-4 pl-12 pr-12 text-white placeholder-gray-500 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all shadow-sm text-lg">
+                <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                    <button onclick="manualPaste()"
+                        class="p-2 text-subtext hover:text-white hover:bg-white/10 rounded-xl transition-all active:scale-95"
+                        title="Paste from Clipboard">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
+                            </path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Format Selector -->
+        <div class="space-y-3">
+            <label class="text-xs font-bold text-subtext tracking-wider uppercase ml-1">Format</label>
+            <div class="bg-surface p-1 rounded-xl flex shadow-inner border border-border/50">
+                <label class="flex-1 relative cursor-pointer"><input type="radio" name="format" value="merged" checked
+                        class="peer sr-only">
+                    <div
+                        class="py-3 text-center text-sm font-medium text-subtext rounded-lg peer-checked:bg-border/60 peer-checked:text-white transition-all">
+                        Msg + Vid</div>
+                </label>
+                <label class="flex-1 relative cursor-pointer"><input type="radio" name="format" value="video"
+                        class="peer sr-only">
+                    <div
+                        class="py-3 text-center text-sm font-medium text-subtext rounded-lg peer-checked:bg-border/60 peer-checked:text-white transition-all">
+                        Video</div>
+                </label>
+                <label class="flex-1 relative cursor-pointer"><input type="radio" name="format" value="audio"
+                        class="peer sr-only">
+                    <div
+                        class="py-3 text-center text-sm font-medium text-subtext rounded-lg peer-checked:bg-border/60 peer-checked:text-white transition-all">
+                        Audio</div>
+                </label>
+            </div>
+        </div>
+
+        <!-- Quality Selector -->
+        <div class="space-y-3">
+            <label class="text-xs font-bold text-subtext tracking-wider uppercase ml-1">Max Quality</label>
+            <div class="flex space-x-3 overflow-x-auto no-scrollbar pb-2">
+                <div class="flex-shrink-0"><input type="radio" name="quality" value="best" id="q_best" checked
+                        class="chip-radio sr-only"><label for="q_best"
+                        class="block px-6 py-2.5 rounded-full border border-border bg-surface text-subtext font-medium text-sm transition-all active:scale-95 cursor-pointer">Best</label>
+                </div>
+                <div class="flex-shrink-0"><input type="radio" name="quality" value="1080p" id="q_1080"
+                        class="chip-radio sr-only"><label for="q_1080"
+                        class="block px-6 py-2.5 rounded-full border border-border bg-surface text-subtext font-medium text-sm transition-all active:scale-95 cursor-pointer">1080p</label>
+                </div>
+                <div class="flex-shrink-0"><input type="radio" name="quality" value="720p" id="q_720"
+                        class="chip-radio sr-only"><label for="q_720"
+                        class="block px-6 py-2.5 rounded-full border border-border bg-surface text-subtext font-medium text-sm transition-all active:scale-95 cursor-pointer">720p</label>
+                </div>
+                <div class="flex-shrink-0"><input type="radio" name="quality" value="480p" id="q_480"
+                        class="chip-radio sr-only"><label for="q_480"
+                        class="block px-6 py-2.5 rounded-full border border-border bg-surface text-subtext font-medium text-sm transition-all active:scale-95 cursor-pointer">480p</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Download Queue List -->
+        <div class="space-y-3">
+            <label class="text-xs font-bold text-subtext tracking-wider uppercase ml-1">Queue</label>
+            <div id="queueList" class="space-y-3 min-h-[100px]">
+                <!-- Example Item (Template) -->
+                <div
+                    class="bg-surface/50 border border-border/50 rounded-xl p-4 text-center text-sm text-subtext italic">
+                    Queue is empty
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Floating Action Bar -->
+    <div class="fixed bottom-0 left-0 right-0 bg-bg/90 backdrop-blur-lg border-t border-border/50 p-4 pb-8 z-50">
+        <div class="max-w-md mx-auto flex items-center gap-4">
+            <button id="downloadBtn" onclick="queueDownload()"
+                class="w-full bg-accent text-[#1e1e2e] font-bold py-4 rounded-2xl text-lg shadow-glow hover:bg-accentHover active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+                <span>Add to Queue</span>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // WebSocket Logic
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${wsProtocol}//${window.location.host}/ws/queue`;
+        let socket;
+        const statusIndicator = document.getElementById('connectionStatus');
+        const queueContainer = document.getElementById('queueList');
+
+        function connectWs() {
+            socket = new WebSocket(wsUrl);
+
+            socket.onopen = () => {
+                statusIndicator.classList.remove('bg-red-500');
+                statusIndicator.classList.add('bg-green-500');
+            };
+
+            socket.onmessage = function (event) {
+                const msg = JSON.parse(event.data);
+                if (msg.type === 'state') {
+                    renderQueue(msg.data);
+                }
+            };
+
+            socket.onclose = () => {
+                statusIndicator.classList.add('bg-red-500');
+                statusIndicator.classList.remove('bg-green-500');
+                setTimeout(connectWs, 2000);
+            };
+        }
+
+        function renderQueue(items) {
+            if (items.length === 0) {
+                queueContainer.innerHTML = `<div class="bg-surface/50 border border-border/50 rounded-xl p-4 text-center text-sm text-subtext italic">Queue is empty</div>`;
+                return;
+            }
+
+            queueContainer.innerHTML = '';
+            // Display active first? Typically list is ordered by creation, backend handles that.
+            // But we want to reverse it visually? No, chronological is fine.
+            // Let's reverse so newest is top? Or active is top? 
+            // Backend sends chronological history. Usually active items bubble up or stay in order.
+
+            // Let's render in reverse order so latest added is at TOP? OR Bottom?
+            // "Queue" implies FIFO. Oldest (first added) should be top.
+
+            items.forEach(item => {
+                const isDownloading = item.status === 'downloading';
+                const isDone = item.status === 'completed';
+                const isError = item.status === 'error';
+
+                let icon = `<div class="w-2 h-2 rounded-full bg-gray-500"></div>`; // Pending
+                if (isDownloading) icon = `<div class="w-2 h-2 rounded-full bg-accent animate-pulse"></div>`;
+                if (isDone) icon = `<svg class="w-4 h-4 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
+                if (isError) icon = `<svg class="w-4 h-4 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>`;
+
+                const progress = item.progress;
+                const progressWidth = `${progress}%`;
+
+                // Truncate URL/Title
+                const displayTitle = item.title === 'Processing...' ? item.url : item.title;
+
+                const card = document.createElement('div');
+                card.className = "bg-surface border border-border/50 rounded-xl p-3 relative overflow-hidden transition-all";
+
+                card.innerHTML = `
+                    <div class="relative z-10 flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-3 overflow-hidden">
+                            <div class="w-8 h-8 rounded-full bg-bg flex items-center justify-center border border-border flex-shrink-0">
+                                ${icon}
+                            </div>
+                            <div class="flex flex-col overflow-hidden">
+                                <span class="text-xs font-bold text-white truncate w-48 block">${displayTitle}</span>
+                                <span class="text-[10px] text-subtext uppercase tracking-wider">${item.format} • ${item.quality}</span>
+                            </div>
+                        </div>
+                        <div class="text-xs font-mono font-bold text-accent">
+                            ${isDone ? 'DONE' : (isError ? 'ERR' : Math.round(progress) + '%')}
+                        </div>
+                    </div>
+                    <!-- Progress Bar Background -->
+                    ${isDownloading ? `<div class="absolute bottom-0 left-0 h-1 bg-accent/30 w-full"><div class="h-full bg-accent progress-fill" style="width: ${progressWidth}"></div></div>` : ''}
+                    ${isDone ? `<div class="absolute bottom-0 left-0 h-1 bg-success/20 w-full"></div>` : ''}
+                    ${isError ? `<div class="absolute bottom-0 left-0 h-1 bg-error/20 w-full"></div>` : ''}
+                `;
+                queueContainer.appendChild(card);
+            });
+        }
+
+        connectWs();
+
+        // Clipboard & Form Logic
+        async function checkClipboard(isAuto = false) {
+            try {
+                const text = await navigator.clipboard.readText();
+                if (text && (text.includes('youtube.com') || text.includes('youtu.be'))) {
+                    const input = document.getElementById('urlInput');
+                    if (input.value !== text) {
+                        input.value = text;
+                        input.classList.add('ring-2', 'ring-accent', 'bg-accent/10');
+                        setTimeout(() => input.classList.remove('ring-2', 'ring-accent', 'bg-accent/10'), 600);
+                    }
+                }
+            } catch (e) {
+                if (!isAuto) alert("Clipboard access denied. Please paste manually.");
+            }
+        }
+        function manualPaste() { checkClipboard(false); }
+        window.addEventListener('focus', () => checkClipboard(true));
+        document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkClipboard(true); });
+
+        // Queue Action
+        async function queueDownload() {
+            const url = document.getElementById('urlInput').value.trim();
+            if (!url) { document.getElementById('urlInput').focus(); return; }
+
+            const format = document.querySelector('input[name="format"]:checked').value;
+            const quality = document.querySelector('input[name="quality"]:checked').value;
+
+            // Animate button
+            const btn = document.getElementById('downloadBtn');
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = `<span>Adding...</span>`;
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/download', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url, format, quality })
+                });
+                const data = await res.json();
+
+                if (data.status === 'ok') {
+                    // Success feedback
+                    document.getElementById('urlInput').value = '';
+                    btn.classList.add('bg-success', 'text-black');
+                    btn.innerHTML = `<span>Active</span><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
+                    setTimeout(() => {
+                        btn.classList.remove('bg-success', 'text-black');
+                        btn.innerHTML = originalContent;
+                        btn.disabled = false;
+                    }, 1000);
+                } else {
+                    alert(data.message);
+                    btn.innerHTML = originalContent;
+                    btn.disabled = false;
+                }
+            } catch (e) {
+                alert("Connection failed");
+                btn.innerHTML = originalContent;
+                btn.disabled = false;
+            }
+        }
+
+        // Quality disabling logic
+        document.querySelectorAll('input[name="format"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                const qualityInputs = document.querySelectorAll('input[name="quality"]');
+                const qualityLabels = document.querySelectorAll('.chip-radio + label');
+                if (e.target.value === 'audio') {
+                    qualityInputs.forEach(input => input.disabled = true);
+                    qualityLabels.forEach(label => label.classList.add('opacity-40', 'pointer-events-none'));
+                } else {
+                    qualityInputs.forEach(input => input.disabled = false);
+                    qualityLabels.forEach(label => label.classList.remove('opacity-40', 'pointer-events-none'));
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
